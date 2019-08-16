@@ -1,8 +1,8 @@
 <template>
   <!-- eslint-disable -->
   <v-container>
-    <v-layout row justify-center>
-      <p class="headline my-12">Utilizing Ethereum and Arweave for Unstoppable Crowdfunding</p>
+    <v-layout row justify-center text-center>
+      <p class="headline my-10 mx-3">Utilizing Ethereum and Arweave for Unstoppable Crowdfunding</p>
     </v-layout>
     <v-layout row justify-center>
       <v-dialog v-model="showDialog" max-width="600px">

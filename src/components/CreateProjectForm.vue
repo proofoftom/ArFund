@@ -23,24 +23,31 @@
               placeholder="What's the goal of the project?"
             />
           </v-flex>
+          <v-flex xs12>
+            <v-text-field
+              label="Time to Fundraise"
+              persistent-hint
+              v-model="newProject.daysToFundraise"
+              placeholder="Numer of days to fundraise"
+            />
+          </v-flex>
           <span class="title font-weight-bold mt-2">Milestones</span>
           <v-layout wrap v-for="(milestone, index) in newProject.milestones" :key="index">
             <v-flex xs12 sm8>
               <v-text-field
-                label="Milestone"
+                label="Deliverable"
                 v-model="milestone.title"
-                placeholder="What's the goal of this milestone?"
+                placeholder="What's the deliverable of this milestone?"
               />
             </v-flex>
             <v-flex xs12 sm2>
-              <!-- TODO: Convert to WEI for smart contracts -->
               <v-text-field
-                label="Ξ Goal"
+                label="Cost"
                 type="number"
                 step=".01"
                 min="0"
-                v-model="milestone.amountGoal"
-                placeholder="Cost"
+                v-model="milestone.goalAmount"
+                placeholder="Ξ Goal"
               />
             </v-flex>
             <v-flex xs12 sm2>
@@ -76,41 +83,67 @@
 </template>
 
 <script>
-// import web3 from "../../contracts/web3";
+import web3 from "@/plugins/web3";
+import contract from "truffle-contract";
+import CrowdfundABI from "@/contracts/Crowdfund";
+
+const Crowdfund = contract(CrowdfundABI);
+Crowdfund.setProvider(web3.currentProvider);
 
 export default {
   data() {
     return {
       account: null,
-      newProject: { isLoading: false, milestones: [{}] }
+      crowdfund: null,
+      newProject: {
+        isLoading: false,
+        milestones: [{}]
+      }
     };
   },
-  mounted() {
-    // web3.eth.getAccounts().then(accounts => {
-    //   [this.account] = accounts;
-    // });
+  async mounted() {
+    [this.account] = await web3.eth.getAccounts();
+    this.crowdfund = await Crowdfund.deployed();
   },
   methods: {
     createProject() {
-      // this.newProject.isLoading = true;
-      // crowdfundInstance.methods
-      //   .startProject(
-      //     this.newProject.title,
-      //     this.newProject.description,
-      //     this.newProject.milestones
-      //   )
-      //   .send({
-      //     from: this.account
-      //   })
-      //   .then(res => {
-      //     const projectInfo = res.events.ProjectStarted.returnValues;
-      //     projectInfo.isLoading = false;
-      //     projectInfo.currentAmount = 0;
-      //     projectInfo.currentState = 0;
-      //     projectInfo.contract = crowdfundProject(projectInfo.contractAddress);
-      //     this.startProjectDialog = false;
-      //     this.newProject = { isLoading: false };
-      //   });
+      this.newProject.isLoading = true;
+
+      this.crowdfund
+        // First create project...
+        .createProject(
+          this.newProject.title,
+          this.newProject.description,
+          this.newProject.daysToFundraise,
+          {
+            from: this.account
+          }
+        )
+        .then(async () => {
+          // then get project id...
+          const projectId = (await this.crowdfund.projectCount()) - 1;
+
+          // then create and attach all of the milestones to project.
+          this.newProject.milestones.forEach((milestone, index) => {
+            this.crowdfund
+              .createMilestone(
+                projectId,
+                milestone.title,
+                web3.utils.toWei(milestone.goalAmount, "ether"),
+                milestone.duration,
+                {
+                  from: this.account
+                }
+              )
+              .then(() => {
+                // If this is the last milestone, close dialog.
+                if (index == this.newProject.milestones.length - 1) {
+                  this.newProject = { isLoading: false, milestones: [{}] };
+                  this.$emit("closeDialog");
+                }
+              });
+          });
+        });
     },
     addMilestone() {
       this.newProject.milestones.push({});
