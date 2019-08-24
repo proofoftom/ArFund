@@ -1,6 +1,6 @@
 # ArFund
 
-[Live on Ropsten and Arweave!](https://arweave.net/sy5a5PYw2_IhA09Mh3tG-ThR1fGSykdcUkHDJo9gaWI)
+[Live on Ropsten and Arweave!](https://arweave.net/w3xNmDX3Vqcj1FTiKd0cKln1Vvnv7veUZ5Yd9d7toeQ)
 
 ## Challenge Description
 
